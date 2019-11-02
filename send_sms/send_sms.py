@@ -8,6 +8,11 @@ client = Client(account_sid, auth_token)
 client.messages.create(
     to="+19148069621",
     from_="16155517341",
-    body="Hey guys, this is Gavin with the chat bot. Let me know if you get this message"
+    body="Chore bot automated text"
 )
 
+client.messages.create(
+    to="+15037999603",
+    from_="16155517341",
+    body="Chore bot automated text"
+)
