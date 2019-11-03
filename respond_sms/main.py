@@ -19,11 +19,13 @@ def responder(arg):
     body = request.values.get('Body').lower().strip()  # make lower and strip leading spaces
     response = ""
     if body in positiveResponse:
-        response = yesHandler()
+        response = updateStatus(phoneNum)
     elif body in negativeResponse:
         response = noHandler()
     else:
         response = defaultHandler(phoneNum)
+
+
     # text person back
     text.message(response)
     return str(text)
@@ -34,15 +36,6 @@ def responder(arg):
 # resp = MessagingResponse()
 # # Add a message
 # resp.message(message here)
-
-
-# Handler functions here. Do the updating and stuff
-def yesHandler():
-    """
-    Updates DB for a Yes response for a user
-    :return: string to text back to user
-    """
-    return 'You replied yes'  # temporary
 
 
 def noHandler():
@@ -71,7 +64,22 @@ def defaultHandler(phoneNum):
     for index, row in rows_df.iterrows():
         if str(row["number"]) == phoneNum:
             return "Your chore for this week is " + str(row["chore"])
-        else:
-            print(str(row["number"]))
 
     return "Error: unable to find your chore"
+
+def updateStatus(phoneNum):
+    """
+    Default handler if text is neither Yes or No. Probable sends the person back
+    their chore for the week
+    :return:
+    """
+
+    QUERY = "UPDATE `chore-bot-257803.ChoreBot.choreWheel` SET choreStatus = 1 WHERE number = '" + phoneNum + "'"
+
+
+    bq_client = bigquery.Client()
+    query_job = bq_client.query(QUERY)  # API request
+    query_job.result()  # Waits for query to finish
+
+
+    return "Congratulations, you have complete your chores for the week!"
