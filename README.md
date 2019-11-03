@@ -12,5 +12,9 @@ Finally, ChoreBot uses Twilio to handle all incoming and outgoing SMS.
 The scripts in this repo are the Google Cloud Functions that run ChatBot. They are called either by a scheduled event (Google Cloud Scheduler), or by the Twilio API when ChatBot receives a text.
 
 
-##### blast_function:
+#### blast_function:
 Sends a quick chores blast, kindly reminding suite members of their chores duties.
+
+#### harasser:
+Sends a message to everyone who has not marked their chores as COMPLETE yet, asking them whether they have completed their chores yet. Their response is handled by `responder`. Users who have completed their chores are not harassed.
+
