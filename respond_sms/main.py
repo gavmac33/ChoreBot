@@ -41,7 +41,7 @@ def noHandler():
     Updates DB for a No response, and does whatever else it needs to
     :return: string to text back to user
     """
-    return 'You replied no'  # temporary
+    return "ChoreBot is sad that you haven't completed your chores yet. Please finish them soon to make ChoreBot happy"
 
 
 def defaultHandler(phoneNum):
@@ -60,9 +60,12 @@ def defaultHandler(phoneNum):
 
     for index, row in rows_df.iterrows():
         if str(row["number"]) == phoneNum:
-            return "Your chore for this week is " + str(row["chore"])
+            if row["choreStatus"]:
+                return "You finished doing " + str(row["chore"]) + " already. ChoreBot is happy :)"
+            else:
+                return "Your chore for this week is " + str(row["chore"]) + ". Please finish it by Sunday or ChoreBot will be angry!"
 
-    return "Error: unable to find your chore"
+    return "Error: ChoreBot is unable to find your chore"
 
 
 def updateStatus(phoneNum):
@@ -78,4 +81,4 @@ def updateStatus(phoneNum):
     query_job = bq_client.query(QUERY)  # API request
     query_job.result()  # Waits for query to finish
 
-    return "Congratulations, you have completed your chores for the week!"
+    return "ChoreBot thanks you for finishing your chores!"
