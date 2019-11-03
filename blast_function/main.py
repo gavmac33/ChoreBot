@@ -10,7 +10,7 @@ def blast_function(arg):
     client = Client(account_sid, auth_token)
 
     for index, row in rows_df.iterrows():
-        msg = str(row["name"]) + ", your chore this week is " + str(row["chore"])
+        msg = "ChoreBot REMINDER:" + str(row["name"]) + ", your chore this week is " + str(row["chore"])
 
         client.messages.create(
             to=str(row["number"]),
