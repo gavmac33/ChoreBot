@@ -16,5 +16,14 @@ The scripts in this repo are the Google Cloud Functions that run ChatBot. They a
 Sends a quick chores blast, kindly reminding suite members of their chores duties.
 
 #### harasser:
-Sends a message to everyone who has not marked their chores as COMPLETE yet, asking them whether they have completed their chores yet. Their response is handled by `responder`. Users who have completed their chores are not harassed.
+Sends a message to everyone who has not marked their chores as COMPLETE yet, asking them whether they have completed their chores yet. Their response is handled by `respond_sms`. Users who have completed their chores are not harassed.
 
+#### reset_completed_chores:
+Resets chore flags to "incomplete".
+
+#### respond_sms:
+Responds to all user messages. User may choose one of several options:
+`Option`: view all options
+`Micromanage`: view everyone's chores and whether they have been completed
+`Status`: view your own chore, and whether it has been marked complete
+respond_sms also handles user input about whether they have completed their chore (in response to `harasser`'s questioning)
