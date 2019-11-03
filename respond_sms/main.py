@@ -8,22 +8,30 @@ app = Flask(__name__)
 
 positiveResponse = ['yes', 'y', 'ye']
 negativeResponse = ['no', 'n']
-
+helpResponse = ['option', 'o', 'op', 'opt']
+micromanageResponse = ['micromanage', 'micro', 'mic', 'm']
+statusResponse = ['status', 's', 'st', 'sta', 'stat']
 
 @app.route("/sms", methods=['GET', 'POST'])
 def responder(arg):
     text = MessagingResponse()  # prepare a response
     data = request.values  # dict containing data about response
     # extract the data we want
-    phoneNum = request.values.get('From')
-    body = request.values.get('Body').lower().strip()  # make lower and strip leading spaces
-    response = ""
+    phoneNum = data.get('From')
+    body = data.get('Body').lower().strip()  # make lower and strip leading spaces
+
     if body in positiveResponse:
         response = updateStatus(phoneNum)
     elif body in negativeResponse:
         response = noHandler()
-    else:
+    elif body in helpResponse:
+        response = help()
+    elif body in micromanageResponse:
+        response = micromanage()
+    elif body in statusResponse:
         response = defaultHandler(phoneNum)
+    else:
+        response = "I don't recognize that command." + help()
 
     # text person back
     text.message(response)
@@ -41,7 +49,7 @@ def noHandler():
     Updates DB for a No response, and does whatever else it needs to
     :return: string to text back to user
     """
-    return "ChoreBot is sad that you haven't completed your chores yet. Please finish them soon to make ChoreBot happy"
+    return "ChoreBot is sad that you haven't completed your chores yet. Please finish them by Sunday to make ChoreBot happy :("
 
 
 def defaultHandler(phoneNum):
@@ -82,3 +90,35 @@ def updateStatus(phoneNum):
     query_job.result()  # Waits for query to finish
 
     return "ChoreBot thanks you for finishing your chores!"
+
+
+def help():
+    return '''
+    ChoreBot offers the following options:
+    option(O): View chorebot options
+    micromange(M): See who has and hasn't completed their chores
+    status(S): Remind yourself what your chore is, and whether you have completed it
+    '''
+
+def micromanage():
+    QUERY = "SELECT * FROM `chore-bot-257803.ChoreBot.choreWheel`"
+
+    bq_client = bigquery.Client()
+    query_job = bq_client.query(QUERY)  # API request
+    rows_df = query_job.result().to_dataframe()  # Waits for query to finish
+
+    names = []
+    completed = []
+    chores = []
+
+    for index, row in rows_df.iterrows():
+        names.append(row["name"])
+        completed.append(row["choreStatus"])
+        chores.append(row["chore"])
+
+    msg = ""
+    for i in range(len(names)):
+        msg += "\n" + names[i] + ": " + chores[i] + ", " + ("COMPLETED" if completed[i] else "INCOMPLETE")
+
+    return msg
+
