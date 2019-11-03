@@ -1,7 +1,6 @@
 from twilio.rest import Client
 from google.cloud import bigquery
 import pandas
-import time
 import os
 
 def rotate_chore_wheel(arg):
