@@ -18,12 +18,7 @@ def harasser(arg):
                 from_="16155517341",
                 body=msg
             )
-        else:
-            client.messages.create(
-                to=str(row["number"]),
-                from_="16155517341",
-                body=str(row["choreStatus"])
-            )
+
 
 def read_chore_wheel():
     QUERY = "SELECT * FROM `chore-bot-257803.ChoreBot.choreWheel`"
