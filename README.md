@@ -22,8 +22,8 @@ Sends a message to everyone who has not marked their chores as COMPLETE yet, ask
 Resets chore flags to "incomplete".
 
 #### respond_sms:
-Responds to all user messages. User may choose one of several options: <br />
-`Option`: view all options <br />
-`Micromanage`: view everyone's chores and whether they have been completed <br />
-`Status`: view your own chore, and whether it has been marked complete <br />
+Responds to all user messages. User may choose one of several options: <br/>
+`Option`: view all options <br/>
+`Micromanage`: view everyone's chores and whether they have been completed <br/>
+`Status`: view your own chore, and whether it has been marked complete <br/>
 respond_sms also handles user input about whether they have completed their chore (in response to `harasser`'s questioning)
