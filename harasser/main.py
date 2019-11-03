@@ -1,12 +1,13 @@
 from twilio.rest import Client
 from google.cloud import bigquery
 import pandas
+import os
 
 def harasser(arg):
     rows_df = read_chore_wheel()
 
-    account_sid = "ACa0d2e2a71c0083c170cda34c30576f01"
-    auth_token = "5b340f0856008eebda79cd94c7e983a0"
+    account_sid = env_vars("ACCOUNT_SID")
+    auth_token = env_vars("AUTH_TOKEN")
     client = Client(account_sid, auth_token)
 
     for index, row in rows_df.iterrows():
@@ -28,3 +29,7 @@ def read_chore_wheel():
     rows_df = query_job.result().to_dataframe()  # Waits for query to finish
 
     return rows_df
+
+
+def env_vars(var):
+    return os.environ.get(var, 'Specified environment variable is not set.')
