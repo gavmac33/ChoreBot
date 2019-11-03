@@ -74,7 +74,7 @@ def updateStatus(phoneNum):
     :return:
     """
 
-    QUERY = "UPDATE `chore-bot-257803.ChoreBot.choreWheel` SET choreStatus = 1 WHERE number = '" + phoneNum + "'"
+    QUERY = "UPDATE `chore-bot-257803.ChoreBot.choreWheel` SET choreStatus = TRUE WHERE number = '" + phoneNum + "'"
 
 
     bq_client = bigquery.Client()
@@ -82,4 +82,4 @@ def updateStatus(phoneNum):
     query_job.result()  # Waits for query to finish
 
 
-    return "Congratulations, you have complete your chores for the week!"
+    return "Congratulations, you have completed your chores for the week!"
