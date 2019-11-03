@@ -1,5 +1,7 @@
 from flask import Flask, request
 from twilio.twiml.messaging_response import MessagingResponse
+from google.cloud import bigquery
+import pandas
 import os
 
 app = Flask(__name__)
@@ -21,7 +23,7 @@ def responder(arg):
     elif body in negativeResponse:
         response = noHandler()
     else:
-        response = defaultHandler()
+        response = defaultHandler(phoneNum)
     # text person back
     text.message(response)
     return str(text)
@@ -51,10 +53,25 @@ def noHandler():
     return 'You replied no'  # temporary
 
 
-def defaultHandler():
+def defaultHandler(phoneNum):
     """
     Default handler if text is neither Yes or No. Probable sends the person back
     their chore for the week
     :return:
     """
-    return 'Your chore for this week is _____'  # temporary
+    print(phoneNum)
+
+    QUERY = "SELECT * FROM `chore-bot-257803.ChoreBot.choreWheel`"
+
+
+    bq_client = bigquery.Client()
+    query_job = bq_client.query(QUERY)  # API request
+    rows_df = query_job.result().to_dataframe()  # Waits for query to finish
+
+    for index, row in rows_df.iterrows():
+        if str(row["number"]) == phoneNum:
+            return "Your chore for this week is " + str(row["chore"])
+        else:
+            print(str(row["number"]))
+
+    return "Error: unable to find your chore"
