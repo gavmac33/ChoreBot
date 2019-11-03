@@ -27,3 +27,6 @@ Responds to all user messages. User may choose one of several options: <br/>
 `Micromanage`: view everyone's chores and whether they have been completed <br/>
 `Status`: view your own chore, and whether it has been marked complete <br/>
 respond_sms also handles user input about whether they have completed their chore (in response to `harasser`'s questioning)
+
+#### rotate_chore_wheel:
+Updates BigQuery storage to represent a chore rotation. This function also resets everyone's chore status to INCOMPLETE, and texts everyone there new chore for the week.
