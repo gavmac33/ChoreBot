@@ -25,11 +25,9 @@ def responder(arg):
     else:
         response = defaultHandler(phoneNum)
 
-
     # text person back
     text.message(response)
     return str(text)
-
 
 
 # how to add a response
@@ -56,7 +54,6 @@ def defaultHandler(phoneNum):
 
     QUERY = "SELECT * FROM `chore-bot-257803.ChoreBot.choreWheel`"
 
-
     bq_client = bigquery.Client()
     query_job = bq_client.query(QUERY)  # API request
     rows_df = query_job.result().to_dataframe()  # Waits for query to finish
@@ -67,6 +64,7 @@ def defaultHandler(phoneNum):
 
     return "Error: unable to find your chore"
 
+
 def updateStatus(phoneNum):
     """
     Default handler if text is neither Yes or No. Probable sends the person back
@@ -76,10 +74,8 @@ def updateStatus(phoneNum):
 
     QUERY = "UPDATE `chore-bot-257803.ChoreBot.choreWheel` SET choreStatus = TRUE WHERE number = '" + phoneNum + "'"
 
-
     bq_client = bigquery.Client()
     query_job = bq_client.query(QUERY)  # API request
     query_job.result()  # Waits for query to finish
-
 
     return "Congratulations, you have completed your chores for the week!"
