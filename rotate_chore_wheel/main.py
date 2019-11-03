@@ -57,7 +57,7 @@ def remake_bq(names, numbers, chores):
         query_job.result()  # Waits for query to finish
 
     for i in range(len(names)):
-        QUERY = "INSERT INTO `chore-bot-257803.ChoreBot.choreWheel` (name, number, chore) SELECT '" + names[i] + "','" + numbers[i] + "','" + chores[i] + "';"
+        QUERY = "INSERT INTO `chore-bot-257803.ChoreBot.choreWheel` (name, number, chore, choreStatus) SELECT '" + names[i] + "','" + numbers[i] + "','" + chores[i] + "', FALSE;"
 
         bq_client = bigquery.Client()
         query_job = bq_client.query(QUERY)  # API request
