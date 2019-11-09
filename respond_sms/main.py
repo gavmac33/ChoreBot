@@ -12,9 +12,13 @@ helpResponse = ['option', 'o', 'op', 'opt']
 micromanageResponse = ['micromanage', 'micro', 'mic', 'm']
 statusResponse = ['status', 's', 'st', 'sta', 'stat']
 
+# define a global variable for Query name
+_queryName = "`chore-bot-257803.ChoreBot.choreWheel`"
+
 @app.route("/sms", methods=['GET', 'POST'])
 def responder(useless_arg):
     phoneNum, body = parseApiCall(request.values) # dict containing data about response
+
 
     if body in positiveResponse:
         response = updateStatus(phoneNum)
@@ -23,7 +27,7 @@ def responder(useless_arg):
     elif body in helpResponse:
         response = help()
     elif body in micromanageResponse:
-        response = micromanage()
+        response = micromanage(phoneNum)
     elif body in statusResponse:
         response = defaultHandler(phoneNum)
     else:
@@ -61,7 +65,7 @@ def defaultHandler(phoneNum):
     """
     print(phoneNum)
 
-    QUERY = "SELECT * FROM `chore-bot-257803.ChoreBot.choreWheel`"
+    QUERY = "SELECT * FROM " + _queryName
 
     bq_client = bigquery.Client()
     query_job = bq_client.query(QUERY)  # API request
@@ -83,7 +87,7 @@ def updateStatus(phoneNum):
     their chore for the week
     :return:
     """
-    QUERY = "UPDATE `chore-bot-257803.ChoreBot.choreWheel` SET choreStatus = TRUE WHERE number = '" + phoneNum + "'"
+    QUERY = "UPDATE " + _queryName + " SET choreStatus = TRUE WHERE number = '" + phoneNum + "'"
 
     bq_client = bigquery.Client()
     query_job = bq_client.query(QUERY)  # API request
@@ -102,13 +106,13 @@ def help():
     complete: Mark your chore as completed
     '''
 
-def micromanage():
-    QUERY = "SELECT * FROM `chore-bot-257803.ChoreBot.choreWheel`"
+def micromanage(phoneNum):
+    QUERY = "SELECT groupName FROM %s WHERE number = '%s'" % (_queryName, phoneNum)
 
     bq_client = bigquery.Client()
     query_job = bq_client.query(QUERY)  # API request
     rows_df = query_job.result().to_dataframe()  # Waits for query to finish
-
+    ## got past here last time
     names = []
     completed = []
     chores = []
@@ -117,10 +121,10 @@ def micromanage():
         names.append(row["name"])
         completed.append(row["choreStatus"])
         chores.append(row["chore"])
-
     msg = ""
     for i in range(len(names)):
-        msg += "\n" + names[i] + ": " + chores[i] + ", " + ("COMPLETED" if completed[i] else "INCOMPLETE")
-
+        msg += "\n" + names[i] + ": " \
+               + chores[i] + ", "\
+               + ("COMPLETED" if completed[i] else "INCOMPLETE")
     return msg
 
