@@ -12,11 +12,11 @@ def harasser(arg):
 
     for index, row in rows_df.iterrows():
         if not row["choreStatus"]:
-            msg = str(row["name"]) + ", have you completed " + str(row["chore"]) + " yet? (y/n)"
+            msg = "ChoreBot: %s, have you completed %s yet? (y/n)" % (str(row["name"]), str(row["chore"]))
 
             client.messages.create(
                 to=str(row["number"]),
-                from_="16155517341",
+                from_="+16155517341",
                 body=msg
             )
 
