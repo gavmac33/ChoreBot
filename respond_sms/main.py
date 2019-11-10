@@ -6,30 +6,28 @@ import pandas
 
 app = Flask(__name__)
 
-positiveResponse = ['yes', 'y', 'ye', 'complete']
-negativeResponse = ['no', 'n']
-helpResponse = ['option', 'o', 'op', 'opt']
-micromanageResponse = ['micromanage', 'micro', 'mic', 'm']
-statusResponse = ['status', 's', 'st', 'sta', 'stat']
-
-# define a global variable for Query name
-_queryName = "`chore-bot-257803.ChoreBot.choreWheel`"
+# Definitions of global constants
+_POSITIVE_RESPONSES = ['yes', 'y', 'ye', 'complete']
+_NEGATIVE_RESPONSES = ['no', 'n']
+_HELP_RESPONSES = ['option', 'o', 'op', 'opt']
+_MICROMANAGE_RESPONSES = ['micromanage', 'micro', 'mic', 'm']
+_STATUS_RESPONSES = ['status', 's', 'st', 'sta', 'stat']
+_CHORE_WHEEL_PATH = "chore-bot-257803.ChoreBot.choreWheel"
 
 @app.route("/sms", methods=['GET', 'POST'])
 def responder(useless_arg):
     phoneNum, body = parseApiCall(request.values) # dict containing data about response
 
-
-    if body in positiveResponse:
+    if body in _POSITIVE_RESPONSES:
         response = updateStatus(phoneNum)
-    elif body in negativeResponse:
+    elif body in _NEGATIVE_RESPONSES:
         response = noHandler()
-    elif body in helpResponse:
+    elif body in _HELP_RESPONSES:
         response = help()
-    elif body in micromanageResponse:
+    elif body in _MICROMANAGE_RESPONSES:
         response = micromanage(phoneNum)
-    elif body in statusResponse:
-        response = defaultHandler(phoneNum)
+    elif body in _STATUS_RESPONSES:
+        response = statusHandler(phoneNum)
     else:
         response = "I don't recognize that command." + help()
 
@@ -57,15 +55,14 @@ def noHandler():
     return "ChoreBot: I'm sad that you haven't completed your chores yet. Please finish them by Sunday to make me happy :("
 
 
-def defaultHandler(phoneNum):
+def statusHandler(phoneNum):
     """
     Default handler if text is neither Yes or No. Probable sends the person back
     their chore for the week
     :return:
     """
-    print(phoneNum)
 
-    QUERY = "SELECT * FROM " + _queryName
+    QUERY = "SELECT * FROM `%s`" % (_CHORE_WHEEL_PATH)
 
     bq_client = bigquery.Client()
     query_job = bq_client.query(QUERY)  # API request
@@ -87,7 +84,7 @@ def updateStatus(phoneNum):
     their chore for the week
     :return:
     """
-    QUERY = "UPDATE " + _queryName + " SET choreStatus = TRUE WHERE number = '" + phoneNum + "'"
+    QUERY = "UPDATE `%s` SET choreStatus = TRUE WHERE number = '%s'" % (_CHORE_WHEEL_PATH, phoneNum)
 
     bq_client = bigquery.Client()
     query_job = bq_client.query(QUERY)  # API request
@@ -107,24 +104,35 @@ def help():
     '''
 
 def micromanage(phoneNum):
-    QUERY = "SELECT groupName FROM %s WHERE number = '%s'" % (_queryName, phoneNum)
+
+    QUERY = "SELECT * FROM `%s`" % (_CHORE_WHEEL_PATH) # read whole database
+    # Other query that should work but not using for now in line below:
+    # QUERY = "SELECT groupName FROM `%s` WHERE number = '%s'" % (_CHORE_WHEEL_PATH, phoneNum)
 
     bq_client = bigquery.Client()
     query_job = bq_client.query(QUERY)  # API request
     rows_df = query_job.result().to_dataframe()  # Waits for query to finish
-    ## got past here last time
+
     names = []
     completed = []
     chores = []
 
+    groupName = ""
+    # find groupName based on current phoneNum
     for index, row in rows_df.iterrows():
-        names.append(row["name"])
-        completed.append(row["choreStatus"])
-        chores.append(row["chore"])
+        if row["number"] == phoneNum:
+            groupName = row["groupName"]
+            break
+
+    for index, row in rows_df.iterrows():
+        if groupName == row["groupName"]:
+            names.append(row["name"])
+            completed.append(row["choreStatus"])
+            chores.append(row["chore"])
+
     msg = ""
     for i in range(len(names)):
-        msg += "\n" + names[i] + ": " \
-               + chores[i] + ", "\
-               + ("COMPLETED" if completed[i] else "INCOMPLETE")
+        msg += "\n" + names[i] + ": " + chores[i] + ", " + ("COMPLETED" if completed[i] else "INCOMPLETE")
+
     return msg
 
