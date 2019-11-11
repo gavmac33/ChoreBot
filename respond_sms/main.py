@@ -33,7 +33,7 @@ def responder(useless_arg):
 
     # text person back
     text = MessagingResponse()  # prepare a response
-    text.message(response)
+    text.message("ChoreBot: " + response)
     return str(text)
 
 # how to add a response
@@ -52,7 +52,7 @@ def noHandler():
     Updates DB for a No response, and does whatever else it needs to
     :return: string to text back to user
     """
-    return "ChoreBot: I'm sad that you haven't completed your chores yet. Please finish them by Sunday to make me happy :("
+    return "I'm sad that you haven't completed your chores yet. Please finish them by Sunday to make me happy :("
 
 
 def statusHandler(phoneNum):
@@ -71,11 +71,11 @@ def statusHandler(phoneNum):
     for index, row in rows_df.iterrows():
         if str(row["number"]) == phoneNum:
             if row["choreStatus"]:
-                return "ChoreBot: You finished doing " + str(row["chore"]) + " already. I am very happy :)"
+                return "You finished doing " + str(row["chore"]) + " already. I am very happy :)"
             else:
-                return "ChoreBot: Your chore for this week is " + str(row["chore"]) + ". Please finish it by Sunday or I will be angry!"
+                return "Your chore for this week is " + str(row["chore"]) + ". Please finish it by Sunday or I will be angry!"
 
-    return "ChoreBot: Error- I am unable to find your chore"
+    return "Error- I am unable to find your chore"
 
 
 def updateStatus(phoneNum):
@@ -90,12 +90,11 @@ def updateStatus(phoneNum):
     query_job = bq_client.query(QUERY)  # API request
     query_job.result()  # Waits for query to finish
 
-    return "ChoreBot: Thank you for finishing your chores!"
+    return "Thank you for finishing your chores!"
 
 
 def help():
     return '''
-    ChoreBot: 
     I respond to the following options:
     Option(O): View my options
     Micromange(M): See who has and hasn't completed their chores
@@ -120,9 +119,9 @@ def micromanage(phoneNum):
             break
 
     if groupName == "":
-        return "ChoreBot: I'm unable to find records of you, check to see if you're registered with ChoreBot"
+        return "I'm unable to find records of you, check to see if you're registered with ChoreBot"
 
-    msg = "ChoreBot: "
+    msg = ""
     for index, row in rows_df.iterrows():
         if groupName == row["groupName"]:
             msg += "\n%s: %s, %s" % (row["name"], row["chore"], ("COMPLETED" if row["choreStatus"] else "INCOMPLETE"))
