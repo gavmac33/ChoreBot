@@ -4,6 +4,8 @@ from collections import deque, defaultdict
 import pandas
 import os
 
+_CHORE_WHEEL_PATH = "chore-bot-257803.ChoreBot.choreWheel"
+
 class Group:
     def __init__(self):
         self.names = []
@@ -29,7 +31,7 @@ def rotate_chore_wheel(arg):
 
 
 def read_chore_wheel():
-    QUERY = "SELECT * FROM `chore-bot-257803.ChoreBot.choreWheel`"
+    QUERY = "SELECT * FROM `%s`" % (_CHORE_WHEEL_PATH)
 
     bq_client = bigquery.Client()
     query_job = bq_client.query(QUERY)  # API request
@@ -89,14 +91,14 @@ def rebuild_bq_database(groups):
         bq_client = bigquery.Client()
 
         for name in names:
-            QUERY = "DELETE FROM `chore-bot-257803.ChoreBot.choreWheel` WHERE name = '" + name + "';"
+            QUERY = "DELETE FROM `%s` WHERE name = '%s';" % (_CHORE_WHEEL_PATH, name)
 
             query_job = bq_client.query(QUERY)  # API request
             query_job.result()  # Waits for query to finish
 
         for i in range(len(names)):
-            QUERY = "INSERT INTO `chore-bot-257803.ChoreBot.choreWheel` (name, number, chore, choreStatus, groupName) SELECT '%s','%s','%s', FALSE, '%s';"\
-                    % (names[i], numbers[i], chores[i], groupName)
+            QUERY = "INSERT INTO `%s` (name, number, chore, choreStatus, groupName) SELECT '%s','%s','%s', FALSE, '%s';"\
+                    % (_CHORE_WHEEL_PATH, names[i], numbers[i], chores[i], groupName)
 
             query_job = bq_client.query(QUERY)  # API request
             query_job.result()  # Waits for query to finish
