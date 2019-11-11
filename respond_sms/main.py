@@ -97,14 +97,13 @@ def help():
     return '''
     ChoreBot: 
     I respond to the following options:
-    option(O): View my options
-    micromange(M): See who has and hasn't completed their chores
-    status(S): Remind yourself what your chore is, and whether you have completed it
-    complete: Mark your chore as completed
+    Option(O): View my options
+    Micromange(M): See who has and hasn't completed their chores
+    Status(S): Remind yourself what your chore is, and whether you have completed it
+    Complete: Mark your chore as completed
     '''
 
 def micromanage(phoneNum):
-
     QUERY = "SELECT * FROM `%s`" % (_CHORE_WHEEL_PATH) # read whole database
     # Other query that should work but not using for now in line below:
     # QUERY = "SELECT groupName FROM `%s` WHERE number = '%s'" % (_CHORE_WHEEL_PATH, phoneNum)
@@ -113,10 +112,6 @@ def micromanage(phoneNum):
     query_job = bq_client.query(QUERY)  # API request
     rows_df = query_job.result().to_dataframe()  # Waits for query to finish
 
-    names = []
-    completed = []
-    chores = []
-
     groupName = ""
     # find groupName based on current phoneNum
     for index, row in rows_df.iterrows():
@@ -124,15 +119,13 @@ def micromanage(phoneNum):
             groupName = row["groupName"]
             break
 
+    if groupName == "":
+        return "ChoreBot: I'm unable to find records of you, check to see if you're registered with ChoreBot"
+
+    msg = "ChoreBot: "
     for index, row in rows_df.iterrows():
         if groupName == row["groupName"]:
-            names.append(row["name"])
-            completed.append(row["choreStatus"])
-            chores.append(row["chore"])
-
-    msg = ""
-    for i in range(len(names)):
-        msg += "\n" + names[i] + ": " + chores[i] + ", " + ("COMPLETED" if completed[i] else "INCOMPLETE")
+            msg += "\n%s: %s, %s" % (row["name"], row["chore"], ("COMPLETED" if row["choreStatus"] else "INCOMPLETE"))
 
     return msg
 
