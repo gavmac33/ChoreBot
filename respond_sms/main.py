@@ -7,7 +7,7 @@ import pandas
 app = Flask(__name__)
 
 # Definitions of global constants
-_POSITIVE_RESPONSES = ['yes', 'y', 'ye', 'complete']
+_POSITIVE_RESPONSES = ['yes', 'y', 'ye', 'complete', 'c']
 _NEGATIVE_RESPONSES = ['no', 'n']
 _HELP_RESPONSES = ['option', 'o', 'op', 'opt']
 _MICROMANAGE_RESPONSES = ['micromanage', 'micro', 'mic', 'm']
@@ -62,18 +62,17 @@ def statusHandler(phoneNum):
     :return:
     """
 
-    QUERY = "SELECT * FROM `%s`" % (_CHORE_WHEEL_PATH)
+    QUERY = "SELECT * FROM `%s` WHERE number = '%s'" % (_CHORE_WHEEL_PATH, phoneNum)
 
     bq_client = bigquery.Client()
     query_job = bq_client.query(QUERY)  # API request
     rows_df = query_job.result().to_dataframe()  # Waits for query to finish
 
     for index, row in rows_df.iterrows():
-        if str(row["number"]) == phoneNum:
-            if row["choreStatus"]:
-                return "You finished doing " + str(row["chore"]) + " already. I am very happy :)"
-            else:
-                return "Your chore for this week is " + str(row["chore"]) + ". Please finish it by Sunday or I will be angry!"
+        if row["choreStatus"]:
+            return "You finished doing " + str(row["chore"]) + " already. I am very happy :)"
+        else:
+            return "Your chore for this week is " + str(row["chore"]) + ". Please finish it by Sunday or I will be angry!"
 
     return "Error- I am unable to find your chore"
 
@@ -94,16 +93,16 @@ def updateStatus(phoneNum):
 
 
 def help():
-    return '''
-    I respond to the following options:
-    Option(O): View my options
-    Micromange(M): See who has and hasn't completed their chores
-    Status(S): Remind yourself what your chore is, and whether you have completed it
-    Complete: Mark your chore as completed
+    return '''I respond to the following options:
+    • Option(O): View my options
+    • Micromange(M): See who has and hasn't completed their chores
+    • Status(S): Remind yourself what your chore is, and whether you have completed it
+    • Complete(C): Mark your chore as completed
     '''
 
 def micromanage(phoneNum):
-    QUERY = "SELECT * FROM `%s`" % (_CHORE_WHEEL_PATH) # read whole database
+    QUERY = "SELECT * FROM `%s` WHERE groupName = (SELECT groupName FROM `%s` WHERE number = '%s');"\
+            % (_CHORE_WHEEL_PATH, _CHORE_WHEEL_PATH, phoneNum) # read whole database
     # Other query that should work but not using for now in line below:
     # QUERY = "SELECT groupName FROM `%s` WHERE number = '%s'" % (_CHORE_WHEEL_PATH, phoneNum)
 
@@ -111,20 +110,9 @@ def micromanage(phoneNum):
     query_job = bq_client.query(QUERY)  # API request
     rows_df = query_job.result().to_dataframe()  # Waits for query to finish
 
-    groupName = ""
-    # find groupName based on current phoneNum
-    for index, row in rows_df.iterrows():
-        if row["number"] == phoneNum:
-            groupName = row["groupName"]
-            break
-
-    if groupName == "":
-        return "I'm unable to find records of you, check to see if you're registered with ChoreBot"
-
     msg = ""
     for index, row in rows_df.iterrows():
-        if groupName == row["groupName"]:
-            msg += "\n%s: %s, %s" % (row["name"], row["chore"], ("COMPLETED" if row["choreStatus"] else "INCOMPLETE"))
+        msg += "\n• %s: %s,\n%s" % (row["name"], row["chore"], ("COMPLETED" if row["choreStatus"] else "INCOMPLETE"))
 
     return msg
 
