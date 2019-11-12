@@ -3,6 +3,9 @@ from google.cloud import bigquery
 import pandas
 import os
 
+# Define global constants
+_CHORE_WHEEL_PATH = "chore-bot-257803.ChoreBot.choreWheel"
+
 def harasser(arg):
     rows_df = read_chore_wheel()
 
@@ -22,7 +25,7 @@ def harasser(arg):
 
 
 def read_chore_wheel():
-    QUERY = "SELECT * FROM `chore-bot-257803.ChoreBot.choreWheel`"
+    QUERY = "SELECT * FROM `%s`" % (_CHORE_WHEEL_PATH)
 
     bq_client = bigquery.Client()
     query_job = bq_client.query(QUERY)  # API request
