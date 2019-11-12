@@ -4,30 +4,51 @@ from collections import deque, defaultdict
 import pandas
 import os
 
+# Define global constants
 _CHORE_WHEEL_PATH = "chore-bot-257803.ChoreBot.choreWheel"
+
+class Person:
+    def __init__(self, name, number, chore, choreStatus, groupID):
+        self.name = name
+        self.number = number
+        self.chore = chore
+        self.choreStatus = choreStatus
+        self.groupID = groupID
 
 class Group:
     def __init__(self):
-        self.names = []
-        self.numbers = []
-        self.chores = deque()
-        self.choreStatus = []
+        self.people = []
+
+    def add(self, person):
+        self.people.append(person)
 
     def rotate_chores(self):
-        self.chores.append(self.chores.popleft())
+        # Sort the people based on groupID
+        sortingKey = lambda p: p.groupID
+        self.people.sort(key=sortingKey)
+
+        # Rotate chores by shifting all chores down 1
+        previousChore = self.people[-1].chore
+        for i in range(len(self.people)):
+            newPreviousChore = self.people[i].chore
+            self.people[i].chore = previousChore
+            previousChore = newPreviousChore
 
 
 def rotate_chore_wheel(arg):
+    # Create messaging client for sending texts
     account_sid = env_vars("ACCOUNT_SID")
     auth_token = env_vars("AUTH_TOKEN")
-    client = Client(account_sid, auth_token)
+    messaging_client = Client(account_sid, auth_token)
 
+    # Read in data
     rows_df = read_chore_wheel()
     groups = convert_df_to_dictionary(rows_df)
-    send_shaming_messages(groups, client)
-    rotate_chores(groups)
-    rebuild_bq_database(groups)
-    text_new_chores(groups, client)
+
+    # Send messages and update chore wheel
+    send_shaming_messages(groups, messaging_client)
+    rotate_chores_update_db(groups)
+    text_new_chores(groups, messaging_client)
 
 
 def read_chore_wheel():
@@ -46,72 +67,58 @@ def convert_df_to_dictionary(rows_df):
         groupName = str(row["groupName"])
         group = groups[groupName]
 
-        group.names.append(str(row["name"]))
-        group.numbers.append(str(row["number"]))
-        group.chores.append(str(row["chore"]))
-        group.choreStatus.append(row["choreStatus"])
+        newPerson = Person(name=str(row["name"]), number=str(row["number"]),
+                           chore=str(row["chore"]), choreStatus=row["choreStatus"], groupID=row["groupID"])
+        group.add(newPerson)
 
     return groups
 
 
 def send_shaming_messages(groups, messaging_client):
     for groupName in groups:
-        truants = []
-        group = groups[groupName]
+        currentGroup = groups[groupName]
 
-        for i in range(len(group.choreStatus)):
-            if not group.choreStatus[i]:
-                truants.append((group.names[i], group.chores[i]))
+        truants = []
+        for person in currentGroup.people:
+            if not person.choreStatus:
+                truants.append(person)
 
         if len(truants) > 0:
             msg = "ChoreBot: The following people have not completed their chores from last week, making me very angry:\n"
             for truant in truants:
-                msg += "%s: %s\n" % (truant[0], truant[1])
+                msg += "%s: %s\n" % (truant.name, truant.chore)
 
-            for number in group.numbers:
+            for person in currentGroup.people:
                 messaging_client.messages.create(
-                    to=str(number),
+                    to=str(person.number),
                     from_="+16155517341",
                     body=msg
                 )
 
 
-def rotate_chores(groups):
-    for groupName in groups:
-        groups[groupName].rotate_chores()
+def rotate_chores_update_db(groups):
+    bq_client = bigquery.Client()
 
-
-def rebuild_bq_database(groups):
     # Change database one group at a time
     for groupName in groups:
-        names = groups[groupName].names
-        numbers = groups[groupName].numbers
-        chores = groups[groupName].chores
+        currentGroup = groups[groupName]
+        currentGroup.rotate_chores()
 
-        bq_client = bigquery.Client()
-
-        for name in names:
-            QUERY = "DELETE FROM `%s` WHERE name = '%s';" % (_CHORE_WHEEL_PATH, name)
-
-            query_job = bq_client.query(QUERY)  # API request
-            query_job.result()  # Waits for query to finish
-
-        for i in range(len(names)):
-            QUERY = "INSERT INTO `%s` (name, number, chore, choreStatus, groupName) SELECT '%s','%s','%s', FALSE, '%s';"\
-                    % (_CHORE_WHEEL_PATH, names[i], numbers[i], chores[i], groupName)
+        for person in currentGroup.people:
+            QUERY = "UPDATE `%s` SET choreStatus = FALSE, chore = '%s' WHERE name = '%s';"\
+                    % (_CHORE_WHEEL_PATH, person.chore, person.name)
 
             query_job = bq_client.query(QUERY)  # API request
             query_job.result()  # Waits for query to finish
 
 
 def text_new_chores(groups, messaging_client):
-    for group in groups:
-        currentGroup = groups[group]
-        for i in range(len(currentGroup.names)):
-            msg = "ChoreBot: %s, your chore for the new week is: %s" % (currentGroup.names[i], currentGroup.chores[i])
+    for groupName in groups:
+        for person in groups[groupName].people:
+            msg = "ChoreBot: %s, your chore for the new week is: %s" % (person.name, person.chore)
 
             messaging_client.messages.create(
-                to=str(currentGroup.numbers[i]),
+                to=str(person.number),
                 from_="+16155517341",
                 body=msg
             )
