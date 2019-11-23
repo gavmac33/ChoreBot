@@ -35,7 +35,7 @@ def harasser(request):
             msg = "ChoreBot: %s, have you completed %s yet? (y/n)" % (member["Name"], member["Chore"])
 
             SMS_CLIENT.messages.create(
-                to="+15037999603",
+                to=member["Number"],
                 from_="+16155517341",
                 body=msg
             )
