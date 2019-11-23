@@ -1,7 +1,6 @@
 from twilio.rest import Client
 import firebase_admin
 from firebase_admin import firestore
-from google.cloud import exceptions as gcloud_exceptions
 import os
 
 fire_app = firebase_admin.initialize_app()
@@ -17,13 +16,13 @@ AUTH_TOKEN = env_vars("AUTH_TOKEN")
 SMS_CLIENT = Client(ACCOUNT_SID, AUTH_TOKEN)
 
 
-def harasser(request):
-    request_json = request.get_json(silent=True)
+def harasser(event, context):
+    argsDict = event["attributes"]
 
-    if request_json:
-        group_name = request_json["GROUP_NAME"]
-    else:
-        raise Exception("No group name was given")
+    try:
+        group_name = argsDict["GROUP_NAME"]
+    except:
+        raise Exception("No group name was provided (add GROUP_NAME to attributes)")
 
     member_infos = db.collection(_CHORE_WHEEL_PATH) \
         .where("Suite", "==", group_name) \
