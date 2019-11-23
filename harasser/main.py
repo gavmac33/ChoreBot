@@ -1,38 +1,42 @@
 from twilio.rest import Client
-from google.cloud import bigquery
-import pandas
+import firebase_admin
+from firebase_admin import firestore
+from google.cloud import exceptions as gcloud_exceptions
 import os
 
-# Define global constants
-_CHORE_WHEEL_PATH = "chore-bot-257803.ChoreBot.choreWheel"
+fire_app = firebase_admin.initialize_app()
+db = firestore.client()
 
-def harasser(arg):
-    rows_df = read_chore_wheel()
+def env_vars(var):
+    return os.environ.get(var, 'Specified environment variable is not set.')
 
-    account_sid = env_vars("ACCOUNT_SID")
-    auth_token = env_vars("AUTH_TOKEN")
-    client = Client(account_sid, auth_token)
+# Define global constants using environment variables
+_CHORE_WHEEL_PATH = env_vars("CHORE_WHEEL_DB_PATH")
+ACCOUNT_SID = env_vars("ACCOUNT_SID")
+AUTH_TOKEN = env_vars("AUTH_TOKEN")
+SMS_CLIENT = Client(ACCOUNT_SID, AUTH_TOKEN)
 
-    for index, row in rows_df.iterrows():
-        if not row["choreStatus"]:
-            msg = "ChoreBot: %s, have you completed %s yet? (y/n)" % (str(row["name"]), str(row["chore"]))
 
-            client.messages.create(
-                to=str(row["number"]),
+def harasser(request):
+    request_json = request.get_json(silent=True)
+
+    if request_json:
+        group_name = request_json["GROUP_NAME"]
+    else:
+        raise Exception("No group name was given")
+
+    member_infos = db.collection(_CHORE_WHEEL_PATH) \
+        .where("Suite", "==", group_name) \
+        .get()
+
+    for member_doc in member_infos:
+        member = member_doc.to_dict()
+        if not member["choreStatus"]:
+            msg = "ChoreBot: %s, have you completed %s yet? (y/n)" % (member["Name"], member["Chore"])
+
+            SMS_CLIENT.messages.create(
+                to="+15037999603",
                 from_="+16155517341",
                 body=msg
             )
 
-
-def read_chore_wheel():
-    QUERY = "SELECT * FROM `%s`" % (_CHORE_WHEEL_PATH)
-
-    bq_client = bigquery.Client()
-    query_job = bq_client.query(QUERY)  # API request
-    rows_df = query_job.result().to_dataframe()  # Waits for query to finish
-
-    return rows_df
-
-
-def env_vars(var):
-    return os.environ.get(var, 'Specified environment variable is not set.')

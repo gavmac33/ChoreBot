@@ -1,4 +1,5 @@
 flask
 twilio
-google-cloud-bigquery
-pandas
+google-cloud-firestore
+firebase-admin
+google-cloud
