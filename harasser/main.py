@@ -1,10 +1,11 @@
 from twilio.rest import Client
 import firebase_admin
 from firebase_admin import firestore
+import base64
 import os
 
 fire_app = firebase_admin.initialize_app()
-db = firestore.client()
+DATABASE = firestore.client()
 
 def env_vars(var):
     return os.environ.get(var, 'Specified environment variable is not set.')
@@ -17,19 +18,14 @@ SMS_CLIENT = Client(ACCOUNT_SID, AUTH_TOKEN)
 
 
 def harasser(event, context):
-    argsDict = event["attributes"]
+    group_name = base64.b64decode(event['data']).decode('utf-8')
 
-    try:
-        group_name = argsDict["GROUP_NAME"]
-    except:
-        raise Exception("No group name was provided (add GROUP_NAME to attributes)")
-
-    member_infos = db.collection(_CHORE_WHEEL_PATH) \
+    member_docs = DATABASE.collection(_CHORE_WHEEL_PATH) \
         .where("Suite", "==", group_name) \
         .get()
+    members = [member.to_dict() for member in member_docs]
 
-    for member_doc in member_infos:
-        member = member_doc.to_dict()
+    for member in members:
         if not member["choreStatus"]:
             msg = "ChoreBot: %s, have you completed %s yet? (y/n)" % (member["Name"], member["Chore"])
 

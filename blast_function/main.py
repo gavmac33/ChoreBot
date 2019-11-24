@@ -1,15 +1,16 @@
 from twilio.rest import Client
 import firebase_admin
 from firebase_admin import firestore
-from google.cloud import exceptions as gcloud_exceptions
 import os
-
+import base64
 
 fire_app = firebase_admin.initialize_app()
 DATABASE = firestore.client()
 
+
 def env_vars(var):
     return os.environ.get(var, 'Specified environment variable is not set.')
+
 
 # Define global constants using environment variables
 _CHORE_WHEEL_PATH = env_vars("CHORE_WHEEL_DB_PATH")
@@ -18,13 +19,8 @@ AUTH_TOKEN = env_vars("AUTH_TOKEN")
 SMS_CLIENT = Client(ACCOUNT_SID, AUTH_TOKEN)
 
 
-def blast_function(request):
-    request_json = request.get_json(silent=True)
-
-    if request_json:
-        group_name = request_json["GROUP_NAME"]
-    else:
-        raise Exception("No group name was given")
+def blast_function(event, context):
+    group_name = base64.b64decode(event['data']).decode('utf-8')
 
     member_docs = DATABASE.collection(_CHORE_WHEEL_PATH)\
         .where("Suite", "==", group_name)\
@@ -40,7 +36,3 @@ def blast_function(request):
             from_="+16155517341",
             body=msg
         )
-
-
-
-

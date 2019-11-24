@@ -1,7 +1,6 @@
 from twilio.rest import Client
 import firebase_admin
 from firebase_admin import firestore
-from google.cloud import exceptions as gcloud_exceptions
 import os
 
 fire_app = firebase_admin.initialize_app()

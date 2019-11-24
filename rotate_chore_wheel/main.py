@@ -1,7 +1,7 @@
 from twilio.rest import Client
 import firebase_admin
 from firebase_admin import firestore
-from google.cloud import exceptions as gcloud_exceptions
+import base64
 import os
 
 fire_app = firebase_admin.initialize_app()
@@ -17,12 +17,8 @@ AUTH_TOKEN = env_vars("AUTH_TOKEN")
 SMS_CLIENT = Client(ACCOUNT_SID, AUTH_TOKEN)
 
 
-def rotate_chore_wheel(request):
-    request_json = request.get_json(silent=True)
-    if request_json:
-        group_name = request_json["GROUP_NAME"]
-    else:
-        raise Exception("No group name was given")
+def rotate_chore_wheel(event, context):
+    group_name = base64.b64decode(event['data']).decode('utf-8')
 
     member_docs = DATABASE.collection(_CHORE_WHEEL_PATH) \
         .where("Suite", "==", group_name) \
@@ -68,7 +64,7 @@ def rotate_chores_update_db(members):
     for member in members:
         DATABASE.collection(_CHORE_WHEEL_PATH)\
             .document(member["Number"])\
-            .update({"choreStatus": False})
+            .update({"choreStatus": False, "Chore": member["Chore"]})
 
 
 def text_new_chores(members):
